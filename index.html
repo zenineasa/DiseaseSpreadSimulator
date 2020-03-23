@@ -1,0 +1,158 @@
+<html>
+<head>
+</head>
+<body>
+
+<div id="canvas" style="position: absolute; width: 500px; height: 500px; background: #efefef; z-index: 900"></div>
+
+<div style="position:absolute;z-index: 999;">
+    <div id="numHealthy" style="display:block;"></div>
+    <div id="numSick" style="display:block;"></div>
+    <div id="numCured" style="display:block;"></div>
+    <div id="numDead" style="display:block;"></div>
+</div>
+<script>
+
+const numInitHealthyPeople = 20;
+const numInitSickPeople = 1;
+
+const maxVel = 5;
+const curePeriod = 50;
+const killProbability = 0.005;
+const spreadRadius = 20;
+
+const divHealthy = document.getElementById("numHealthy");
+const divSick = document.getElementById("numSick");
+const divCured = document.getElementById("numCured");
+const divDead = document.getElementById("numDead");
+
+class Person{
+    static allPersons = [];
+
+    constructor(isSick = false){
+        this.div = document.createElement("div");
+        this.div.style.width = "4px";
+        this.div.style.height = "4px";
+        this.div.style.borderRadius = "50%";
+        this.div.style.background = "#000000";
+        this.div.style.position = "absolute";
+        
+        // Init position
+        this.div.style.left = Math.random() * 500;
+        this.div.style.top = Math.random() * 500;
+        
+        // Init velocity
+        this.Velx = Math.random() * maxVel;
+        this.Vely = Math.random() * maxVel;
+        
+        document.getElementById("canvas").appendChild(this.div);
+        
+        if(isSick){
+            this.getSick(this);
+        }
+        this.sickDuration = 0;
+        this.isCured = false;
+        this.isDead = false;
+        
+        this.update(this);
+        
+        Person.allPersons.push(this);
+    }
+    
+    update(that){
+        var updateVar = setInterval(function(){
+            // Position and Velocity:
+            that.div.style.left = that.div.offsetLeft + that.Velx;
+            that.div.style.top = that.div.offsetTop + that.Vely;
+            
+            if((that.div.offsetLeft >= 500 && that.Velx > 0) || (that.div.offsetLeft <= 0 && that.Velx < 0))
+                that.Velx = - that.Velx;
+            if((that.div.offsetTop >= 500 && that.Vely > 0) || (that.div.offsetTop <= 0 && that.Vely < 0))
+                that.Vely = - that.Vely;
+            
+            // Receive disease if sick people nearby
+            if(!(that.isCured || that.isSick)){/*
+                Person.allPersons.forEach(function(person2){
+                    if(person2.isSick){
+                        // if person is nearby
+                        var dist = Math.sqrt(Math.pow(that.div.offsetLeft - person2.div.offsetLeft, 2) + Math.pow(that.div.offsetTop - person2.div.offsetTop, 2));
+                        if(dist < spreadRadius){
+                            that.getSick(that);
+                        }
+                    }
+                });*/
+                for(var i = 0; i < Person.allPersons.length; i++){
+                    var person2 = Person.allPersons[i];
+                    // if person is nearby
+                    if(person2.isSick){
+                        var dist = Math.sqrt(Math.pow(that.div.offsetLeft - person2.div.offsetLeft, 2) + Math.pow(that.div.offsetTop - person2.div.offsetTop, 2));
+                        if(dist < spreadRadius){
+                            that.getSick(that);
+                        }
+                    }
+                }
+            }
+            
+            // Sickness
+            if(that.isSick){
+                that.sickDuration++;
+                if(that.sickDuration > curePeriod){
+                    that.getCured(that);
+                } else {
+                    // Kill with probability:
+                    if(Math.random() < killProbability){
+                        that.kill(that);
+                        clearInterval(updateVar);
+                    }
+                }
+            }
+
+            // Statistics Display:
+            divHealthy.innerText = "Healthy: " + numHealthyPeople;
+            divSick.innerText = "Sick: " + numSickPeople;
+            divCured.innerText = "Cured: " + numCuredPeople;
+            divDead.innerText = "Dead: " + numDeadPeople;
+            
+        },100);
+    }
+    
+    getCured(that){
+        that.isSick = false;
+        that.isCured = true;
+        that.div.style.background = "#00ff00";
+        numCuredPeople++;
+        numSickPeople--;
+    }
+    
+    getSick(that){
+        that.isSick = true;
+        that.div.style.background = "#ff0000";
+        numSickPeople++;
+        numHealthyPeople--;
+    }
+    
+    kill(that){
+        that.div.parentElement.removeChild(that.div);
+        that.isDead = true;
+        numDeadPeople++;
+        numSickPeople--;
+    }
+}
+
+var numHealthyPeople = numInitHealthyPeople + numInitSickPeople;
+var numSickPeople = 0; // get sick is called in the constructor
+var numCuredPeople = 0;
+var numDeadPeople = 0;
+
+for(var i = 0; i < numInitHealthyPeople; i++){
+    new Person();
+}
+
+for(var i = 0; i < numInitSickPeople; i++){
+    new Person(true);
+}
+
+</script>
+
+</body>
+</html>
