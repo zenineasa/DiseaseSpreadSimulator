@@ -88,6 +88,7 @@ class Person{
                         var dist = Math.sqrt(Math.pow(that.div.offsetLeft - person2.div.offsetLeft, 2) + Math.pow(that.div.offsetTop - person2.div.offsetTop, 2));
                         if(dist < spreadRadius){
                             that.getSick(that);
+                            break;
                         }
                     }
                 }
